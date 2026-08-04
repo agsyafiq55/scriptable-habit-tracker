@@ -32,6 +32,14 @@ const THEMES = {
     futureDotColor: new Color("#3F4E4F"),
     completedDotColor: new Color("#7DCE13"),
   },
+  grayscale: {
+    name: "Grayscale",
+    backgroundColor: new Color("#000000"),
+    fontColor: new Color("#FFFFFF"),
+    futureDotColor: new Color("#2E2E2E"), // ~18% - barely there
+    pastDotColor: new Color("#808080"), // ~50% - mid gray
+    completedDotColor: new Color("#FFFFFF"), // 100% - pops
+  },
   sunset: {
     name: "Sunset",
     backgroundColor: new Color("#1A1A2E"),
