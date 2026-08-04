@@ -79,8 +79,6 @@ const USER_SETTINGS = {
 async function loadData() {
   let data = {
     loggedDates: USER_SETTINGS.initialLoggedDates || [],
-    currentTheme: USER_SETTINGS.defaultTheme,
-    settings: USER_SETTINGS,
     pendingSync: false,
   }
 
@@ -90,8 +88,6 @@ async function loadData() {
       const restored = await fetchFromGitHub()
       if (restored) {
         data.loggedDates = restored.loggedDates || data.loggedDates
-        data.currentTheme = restored.currentTheme || USER_SETTINGS.defaultTheme
-        data.settings = { ...USER_SETTINGS, ...(restored.settings || {}) }
         saveData(data)
       }
     } catch (e) {
@@ -103,10 +99,7 @@ async function loadData() {
   try {
     const parsedData = JSON.parse(Keychain.get(USER_SETTINGS.storageKey))
 
-    // Merge saved settings with defaults (allows for adding new settings)
     data.loggedDates = parsedData.loggedDates || data.loggedDates
-    data.currentTheme = parsedData.currentTheme || USER_SETTINGS.defaultTheme
-    data.settings = { ...USER_SETTINGS, ...(parsedData.settings || {}) }
     data.pendingSync = parsedData.pendingSync || false
   } catch (e) {
     console.log("Error loading data: " + e)
@@ -318,10 +311,10 @@ function getThemeColors(themeKey) {
 // MAIN WIDGET FUNCTION
 function createWidget(data) {
   const widget = new ListWidget()
-  const settings = data.settings
+  const settings = USER_SETTINGS
 
   // Get current theme colors
-  const theme = getThemeColors(data.currentTheme)
+  const theme = getThemeColors(USER_SETTINGS.defaultTheme)
 
   widget.backgroundColor = theme.backgroundColor
   widget.setPadding(12, 12, 12, 12)
