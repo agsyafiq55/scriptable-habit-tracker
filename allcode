@@ -188,77 +188,8 @@ function toggleTodayLog(loggedDates) {
   return loggedDates
 }
 
-// Theme functions
-function cycleTheme(data) {
-  const themeKeys = Object.keys(THEMES)
-  const currentIndex = themeKeys.indexOf(data.currentTheme)
-  const nextIndex = (currentIndex + 1) % themeKeys.length
-  data.currentTheme = themeKeys[nextIndex]
-  return data
-}
-
 function getThemeColors(themeKey) {
   return THEMES[themeKey] || THEMES[USER_SETTINGS.defaultTheme]
-}
-
-// SETTINGS UI
-async function showSettingsUI(data) {
-  const alert = new Alert()
-  alert.title = "Habit Tracker Settings"
-  alert.message = "Customize your habit tracker"
-  
-  alert.addTextField("Habit Name", data.settings.habitName)
-  
-  alert.addAction("Save")
-  alert.addAction("Advanced Settings")
-  alert.addCancelAction("Cancel")
-  
-  const response = await alert.presentAlert()
-  
-  if (response === 0) {
-    // Save basic settings
-    data.settings.habitName = alert.textFieldValue(0)
-    saveData(data)
-    return true
-  } else if (response === 1) {
-    // Show advanced settings
-    return await showAdvancedSettingsUI(data)
-  }
-  
-  return false
-}
-
-async function showAdvancedSettingsUI(data) {
-  const alert = new Alert()
-  alert.title = "Advanced Settings"
-  
-  alert.addTextField("Dot Size (1-5)", String(data.settings.dotSize))
-  alert.addTextField("Dot Spacing (1-5)", String(data.settings.dotSpacing))
-  alert.addTextField("Font Size (10-20)", String(data.settings.fontSize))
-  
-  // Add more fields as needed
-  
-  alert.addAction("Save")
-  alert.addCancelAction("Cancel")
-  
-  const response = await alert.presentAlert()
-  
-  if (response === 0) {
-    // Parse and validate number inputs
-    const dotSize = parseInt(alert.textFieldValue(0))
-    const dotSpacing = parseInt(alert.textFieldValue(1))
-    const fontSize = parseInt(alert.textFieldValue(2))
-    
-    // Validate inputs
-    data.settings.dotSize = isNaN(dotSize) ? data.settings.dotSize : Math.min(Math.max(dotSize, 1), 5)
-    data.settings.dotSpacing = isNaN(dotSpacing) ? data.settings.dotSpacing : Math.min(Math.max(dotSpacing, 1), 5)
-    data.settings.fontSize = isNaN(fontSize) ? data.settings.fontSize : Math.min(Math.max(fontSize, 10), 20)
-    
-    saveData(data)
-    return true
-  }
-  
-  return false
 }
 
 // MAIN WIDGET FUNCTION
@@ -361,59 +292,15 @@ function createWidget(data) {
 // MAIN EXECUTION
 async function run() {
   const data = loadData()
-  let widget = createWidget(data)
-  let settingsChanged = false
 
-  // Handle widget taps and actions
-  if (config.runsInApp) {
-    // Show a menu when running in app
-    const alert = new Alert()
-    alert.title = "Habit Tracker Options"
-    alert.addAction("Toggle Today")
-    alert.addAction("Change Theme")
-    alert.addAction("Settings")
-    alert.addCancelAction("Cancel")
-
-    const selection = await alert.presentSheet()
-    
-    if (selection === 0) {
-      // Toggle today's log
-      data.loggedDates = toggleTodayLog(data.loggedDates)
-      saveData(data)
-      widget = createWidget(data)
-      widget.presentMedium()
-    } else if (selection === 1) {
-      // Cycle through themes
-      cycleTheme(data)
-      saveData(data)
-      widget = createWidget(data)
-      widget.presentMedium()
-    } else if (selection === 2) {
-      // Show settings
-      settingsChanged = await showSettingsUI(data)
-      if (settingsChanged) {
-        widget = createWidget(data)
-        widget.presentMedium()
-      }
-    }
-  } else if (args.widgetParameter === "toggle") {
-    // Handle widget parameter for toggle
-    data.loggedDates = toggleTodayLog(data.loggedDates)
-    saveData(data)
-    Script.setWidget(widget)
-  } else if (args.widgetParameter === "theme") {
-    // Handle widget parameter for theme change
-    cycleTheme(data)
-    saveData(data)
-    Script.setWidget(widget)
-  } else if (config.runsInWidget) {
-    // When running in widget, just set up the widget
-    Script.setWidget(widget)
+  if (config.runsInWidget) {
+    // Widget render: just draw it
+    Script.setWidget(createWidget(data))
   } else {
-    // Default behavior when tapping widget: toggle today
+    // Tap/open: toggle today, no menu (theme/name are edited in code now)
     data.loggedDates = toggleTodayLog(data.loggedDates)
     saveData(data)
-    widget.presentMedium()
+    createWidget(data).presentMedium()
   }
 
   Script.complete()
