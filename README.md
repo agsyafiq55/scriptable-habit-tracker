@@ -16,8 +16,21 @@ A simple and customizable iOS habit tracker widget built with [Scriptable](https
 5. Add a new **medium-sized Scriptable widget** to your home screen.
 6. Long-press the widget and tap **Edit Widget**:
    - Set **Script** to `Habit Tracker Widget`
+   - Set **Parameter** to your habit name, e.g. `study`
    - Set **When Interacted** to `Run Script`
 7. That’s it! You’re good to go 🙌
+
+---
+
+## ➕ Tracking Multiple Habits
+
+One script handles as many habits as you want — you don't need (and can't have) a second script with the same name.
+
+Add another medium widget, point it at the same `Habit Tracker Widget` script, and give it a different **Parameter** (`gym`, `reading`, …). Each parameter gets its own dot grid, its own streak, and its own entry in the backup file. The widget title shows the parameter, so name it how you want it to read.
+
+A widget with no parameter falls back to `habitName` in the script's `settings` section.
+
+> **If tapping a widget toggles the wrong habit**, its parameter isn't reaching the script. Set **When Interacted** to `Open URL` instead and use `scriptable:///run/Habit%20Tracker%20Widget?habit=gym` (URL-encode spaces in the habit name).
 
 ---
 
@@ -60,7 +73,7 @@ There are **six built-in themes**. You can switch between them or customize the 
 
 ## ☁️ GitHub Backup
 
-Every toggle pushes `habit-data.json` to a branch named after the current year (e.g. `2026`) in this repo, creating that branch off `main` the first time it's needed.
+Every toggle pushes `habit-data.json` to a branch named after the current year (e.g. `2026`) in this repo, creating that branch off `main` the first time it's needed. All your habits live in that one file, so a single push backs up everything and a fresh install restores everything.
 
 - First toggle after setup prompts for a **fine-grained GitHub PAT** scoped to this repo with `Contents: Read and write` permission. It's saved to Scriptable's own Keychain — never written into the script.
 - If a push fails (offline, bad token), the widget shows a red **"⚠︎ not synced"** next to your streak. Since each push sends the full current state, the next successful toggle automatically catches GitHub back up — no manual retry needed.
