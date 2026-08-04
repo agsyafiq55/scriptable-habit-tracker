@@ -81,17 +81,19 @@ function loadData() {
     loggedDates: USER_SETTINGS.initialLoggedDates || [],
     currentTheme: USER_SETTINGS.defaultTheme,
     settings: USER_SETTINGS,
+    pendingSync: false,
   }
 
   try {
     const stored = Keychain.get(USER_SETTINGS.storageKey)
     if (stored) {
       const parsedData = JSON.parse(stored)
-      
+
       // Merge saved settings with defaults (allows for adding new settings)
       data.loggedDates = parsedData.loggedDates || data.loggedDates
       data.currentTheme = parsedData.currentTheme || USER_SETTINGS.defaultTheme
       data.settings = { ...USER_SETTINGS, ...(parsedData.settings || {}) }
+      data.pendingSync = parsedData.pendingSync || false
     }
   } catch (e) {
     console.log("Error loading data: " + e)
@@ -108,6 +110,92 @@ function saveData(data) {
     console.log("Error saving data: " + e)
     return false
   }
+}
+
+// GITHUB BACKUP
+// Token lives in Scriptable's Keychain only - never in this file.
+// Modify the variables to match your own forked repo
+const GITHUB_SETTINGS = {
+  owner: "agsyafiq55",
+  repo: "scriptable-habit-tracker",
+  path: "habit-data.json",
+  baseBranch: "main",
+  tokenKey: "githubBackupToken",
+}
+
+function githubApiUrl(path) {
+  return `https://api.github.com/repos/${GITHUB_SETTINGS.owner}/${GITHUB_SETTINGS.repo}/${path}`
+}
+
+async function getGithubToken() {
+  let token = Keychain.get(GITHUB_SETTINGS.tokenKey)
+  if (token) return token
+
+  const alert = new Alert()
+  alert.title = "GitHub Backup Token"
+  alert.message = "Enter a fine-grained PAT with contents:write access on this repo."
+  alert.addSecureTextField("Personal Access Token")
+  alert.addAction("Save")
+  alert.addCancelAction("Skip")
+
+  const response = await alert.presentAlert()
+  if (response !== 0) return null
+
+  token = alert.textFieldValue(0)
+  if (!token) return null
+
+  Keychain.set(GITHUB_SETTINGS.tokenKey, token)
+  return token
+}
+
+// Creates the year branch from baseBranch's HEAD if it doesn't exist yet.
+async function ensureYearBranch(headers, branch) {
+  const checkReq = new Request(githubApiUrl(`git/ref/heads/${branch}`))
+  checkReq.method = "GET"
+  checkReq.headers = headers
+  await checkReq.loadJSON()
+  if (checkReq.response.statusCode === 200) return
+
+  const baseReq = new Request(githubApiUrl(`git/ref/heads/${GITHUB_SETTINGS.baseBranch}`))
+  baseReq.method = "GET"
+  baseReq.headers = headers
+  const baseRef = await baseReq.loadJSON()
+
+  const createReq = new Request(githubApiUrl("git/refs"))
+  createReq.method = "POST"
+  createReq.headers = headers
+  createReq.body = JSON.stringify({ ref: `refs/heads/${branch}`, sha: baseRef.object.sha })
+  await createReq.loadJSON()
+}
+
+async function pushToGitHub(data) {
+  const token = await getGithubToken()
+  if (!token) return
+
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: "application/vnd.github+json",
+  }
+  const branch = String(new Date().getFullYear())
+  await ensureYearBranch(headers, branch)
+
+  const contentsUrl = githubApiUrl(`contents/${GITHUB_SETTINGS.path}`)
+
+  const getReq = new Request(`${contentsUrl}?ref=${branch}`)
+  getReq.method = "GET"
+  getReq.headers = headers
+  const existing = await getReq.loadJSON()
+
+  const putReq = new Request(contentsUrl)
+  putReq.method = "PUT"
+  putReq.headers = headers
+  putReq.body = JSON.stringify({
+    message: `Update habit data - ${formatDate(new Date())}`,
+    content: Data.fromString(JSON.stringify(data, null, 2)).toBase64String(),
+    branch,
+    ...(existing && existing.sha ? { sha: existing.sha } : {}),
+  })
+  await putReq.loadJSON()
 }
 
 // HELPER FUNCTIONS
@@ -278,8 +366,15 @@ function createWidget(data) {
   streakText.font = new Font(settings.fontName, settings.fontSize)
   streakText.textColor = theme.fontColor
 
+  if (data.pendingSync) {
+    footer.addSpacer(6)
+    const syncWarning = footer.addText("⚠︎ not synced")
+    syncWarning.font = new Font(settings.fontName, settings.fontSize - 2)
+    syncWarning.textColor = new Color("#FF3B30")
+  }
+
   footer.addSpacer()
-  
+
   // Add theme indicator
   const themeText = footer.addText(theme.name)
   themeText.font = new Font(settings.fontName, settings.fontSize - 2)
@@ -301,6 +396,16 @@ async function run() {
     data.loggedDates = toggleTodayLog(data.loggedDates)
     saveData(data)
     createWidget(data).presentMedium()
+
+    // Push sends full state, so next toggle auto-catches up on failures
+    try {
+      await pushToGitHub(data)
+      data.pendingSync = false
+    } catch (e) {
+      console.log("GitHub backup failed: " + e)
+      data.pendingSync = true
+    }
+    saveData(data)
   }
 
   Script.complete()

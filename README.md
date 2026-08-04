@@ -39,7 +39,7 @@ These values can be modified to better suit your aesthetic preference or screen 
 
 ## 🎨 Themes
 
-There are **five built-in themes**. You can switch between them or customize the color palette directly in the code.
+There are **six built-in themes**. You can switch between them or customize the color palette directly in the code.
 
 ### 🌌 Midnight
 <img src="https://github.com/user-attachments/assets/1257282b-5f35-4c78-884a-4425d97934a7" width="562" height="316">
@@ -55,6 +55,16 @@ There are **five built-in themes**. You can switch between them or customize the
 
 ### 🌲 Forest
 <img src="https://github.com/user-attachments/assets/05f957dc-4ab3-4730-a1c8-c17d82f82f16" width="562" height="316">
+
+---
+
+## ☁️ GitHub Backup
+
+Every toggle pushes `habit-data.json` to a branch named after the current year (e.g. `2026`) in this repo, creating that branch off `main` the first time it's needed.
+
+- First toggle after setup prompts for a **fine-grained GitHub PAT** scoped to this repo with `Contents: Read and write` permission. It's saved to Scriptable's own Keychain — never written into the script.
+- If a push fails (offline, bad token), the widget shows a red **"⚠︎ not synced"** next to your streak. Since each push sends the full current state, the next successful toggle automatically catches GitHub back up — no manual retry needed.
+- This repo is public, so anything pushed (your logged dates) is public too.
 
 ---
 
