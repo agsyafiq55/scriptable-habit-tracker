@@ -76,7 +76,7 @@ const USER_SETTINGS = {
 }
 
 // STORAGE FUNCTIONS
-function loadData() {
+async function loadData() {
   let data = {
     loggedDates: USER_SETTINGS.initialLoggedDates || [],
     currentTheme: USER_SETTINGS.defaultTheme,
@@ -84,17 +84,30 @@ function loadData() {
     pendingSync: false,
   }
 
-  try {
-    const stored = Keychain.get(USER_SETTINGS.storageKey)
-    if (stored) {
-      const parsedData = JSON.parse(stored)
-
-      // Merge saved settings with defaults (allows for adding new settings)
-      data.loggedDates = parsedData.loggedDates || data.loggedDates
-      data.currentTheme = parsedData.currentTheme || USER_SETTINGS.defaultTheme
-      data.settings = { ...USER_SETTINGS, ...(parsedData.settings || {}) }
-      data.pendingSync = parsedData.pendingSync || false
+  if (!Keychain.contains(USER_SETTINGS.storageKey)) {
+    // Fresh install: try restoring from GitHub before falling back to defaults
+    try {
+      const restored = await fetchFromGitHub()
+      if (restored) {
+        data.loggedDates = restored.loggedDates || data.loggedDates
+        data.currentTheme = restored.currentTheme || USER_SETTINGS.defaultTheme
+        data.settings = { ...USER_SETTINGS, ...(restored.settings || {}) }
+        saveData(data)
+      }
+    } catch (e) {
+      console.log("GitHub restore failed: " + e)
     }
+    return data
+  }
+
+  try {
+    const parsedData = JSON.parse(Keychain.get(USER_SETTINGS.storageKey))
+
+    // Merge saved settings with defaults (allows for adding new settings)
+    data.loggedDates = parsedData.loggedDates || data.loggedDates
+    data.currentTheme = parsedData.currentTheme || USER_SETTINGS.defaultTheme
+    data.settings = { ...USER_SETTINGS, ...(parsedData.settings || {}) }
+    data.pendingSync = parsedData.pendingSync || false
   } catch (e) {
     console.log("Error loading data: " + e)
   }
@@ -197,6 +210,27 @@ async function pushToGitHub(data) {
     ...(existing && existing.sha ? { sha: existing.sha } : {}),
   })
   await putReq.loadJSON()
+}
+
+// Reads habit-data.json back from the current year's branch, if it exists.
+async function fetchFromGitHub() {
+  const token = await getGithubToken()
+  if (!token) return null
+
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: "application/vnd.github+json",
+  }
+  const branch = String(new Date().getFullYear())
+  const contentsUrl = githubApiUrl(`contents/${GITHUB_SETTINGS.path}`)
+
+  const getReq = new Request(`${contentsUrl}?ref=${branch}`)
+  getReq.method = "GET"
+  getReq.headers = headers
+  const existing = await getReq.loadJSON()
+  if (!existing || !existing.content) return null
+
+  return JSON.parse(Data.fromBase64String(existing.content).toRawString())
 }
 
 // HELPER FUNCTIONS
@@ -387,7 +421,7 @@ function createWidget(data) {
 
 // MAIN EXECUTION
 async function run() {
-  const data = loadData()
+  const data = await loadData()
 
   if (config.runsInWidget) {
     // Widget render: just draw it
