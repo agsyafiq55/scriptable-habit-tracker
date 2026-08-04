@@ -128,8 +128,9 @@ function githubApiUrl(path) {
 }
 
 async function getGithubToken() {
-  let token = Keychain.get(GITHUB_SETTINGS.tokenKey)
-  if (token) return token
+  if (Keychain.contains(GITHUB_SETTINGS.tokenKey)) {
+    return Keychain.get(GITHUB_SETTINGS.tokenKey)
+  }
 
   const alert = new Alert()
   alert.title = "GitHub Backup Token"
@@ -141,7 +142,7 @@ async function getGithubToken() {
   const response = await alert.presentAlert()
   if (response !== 0) return null
 
-  token = alert.textFieldValue(0)
+  const token = alert.textFieldValue(0)
   if (!token) return null
 
   Keychain.set(GITHUB_SETTINGS.tokenKey, token)
