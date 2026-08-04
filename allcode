@@ -52,9 +52,9 @@ const THEMES = {
 
 // USER SETTINGS - These can be modified directly
 const USER_SETTINGS = {
-  habitName: "study", // Fallback when the widget has no parameter set
+  habitName: "unnamed (set in widget settings)", // Fallback when the widget has no parameter set
   year: new Date().getFullYear(), // Current year by default
-  defaultTheme: "dark", // Default theme key
+  defaultTheme: "grayscale", // Default theme key
   
   // Appearance settings
   dotSize: 3, // Customize dot diameter
