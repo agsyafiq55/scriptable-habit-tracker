@@ -18,10 +18,8 @@
       "loggedDates": []
     },
     "guitar": {
-      "loggedDates": [
-        "2026-08-05"
-      ]
+      "loggedDates": []
     }
   },
-  "pendingSync": false
+  "pendingSync": true
 }
