@@ -15,11 +15,13 @@
       ]
     },
     "unnamed (set in widget settings)": {
-      "loggedDates": []
+      "loggedDates": [
+        "2026-08-05"
+      ]
     },
     "guitar": {
       "loggedDates": []
     }
   },
-  "pendingSync": true
+  "pendingSync": false
 }
