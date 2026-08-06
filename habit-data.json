@@ -12,7 +12,8 @@
     },
     "read": {
       "loggedDates": [
-        "2026-08-05"
+        "2026-08-05",
+        "2026-08-06"
       ]
     },
     "unnamed (set in widget settings)": {
@@ -33,5 +34,5 @@
       ]
     }
   },
-  "pendingSync": false
+  "pendingSync": true
 }
