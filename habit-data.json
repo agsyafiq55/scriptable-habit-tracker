@@ -31,9 +31,10 @@
     },
     "exercise": {
       "loggedDates": [
-        "2026-08-06"
+        "2026-08-06",
+        "2026-08-11"
       ]
     }
   },
-  "pendingSync": true
+  "pendingSync": false
 }
