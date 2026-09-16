@@ -54,7 +54,8 @@
         "2026-09-08",
         "2026-09-09",
         "2026-09-12",
-        "2026-09-15"
+        "2026-09-15",
+        "2026-09-16"
       ]
     },
     "unnamed (set in widget settings)": {
@@ -99,5 +100,5 @@
       ]
     }
   },
-  "pendingSync": true
+  "pendingSync": false
 }
